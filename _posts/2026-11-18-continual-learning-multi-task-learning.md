@@ -8,9 +8,22 @@ htmlwidgets: true
 ready: false
 
 # Reporter team authors
-# TODO: Replace the placeholder with the November 18 reporter team and affiliations.
 authors:
-  - name: "Reporter Team (Student Names)"
+  - name: "Jinyoon Kim"
+    affiliations:
+      - name: "University of Virginia"
+  - name: "Austin Song"
+    affiliations:
+      - name: "University of Virginia"
+  - name: "Boyang Yan"
+    affiliations:
+      - name: "University of Virginia"
+  - name: "Sai Tarra"
+    affiliations:
+      - name: "University of Virginia"
+  - name: "Harris Ilyas"
+    affiliations:
+      - name: "University of Virginia"
 
 bibliography: 2026-11-18-continual-learning-multi-task-learning.bib
 
