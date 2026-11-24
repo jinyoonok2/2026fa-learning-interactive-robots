@@ -56,11 +56,84 @@ Store interactive HTML in assets/html/2026-11-18-continual-learning-multi-task-l
 
 ## Introduction
 
-A robot working in a changing environment needs to acquire new skills while retaining the ones it already uses. Learning to manipulate a new object can update the same model parameters that supported an earlier task, reducing performance on that task. This loss of previously learned behavior is called **catastrophic forgetting**.
+### Background and Motivation
 
-**Continual learning**, also called lifelong learning, studies how an agent learns from a sequence of tasks when earlier training data are only partly available or no longer accessible. **Multi-task learning** instead trains on several tasks together, with access to their datasets. The central challenge is to reuse earlier knowledge to learn new tasks efficiently while preserving earlier skills. <d-cite key="liu2023libero"></d-cite>
+A robot working in a changing environment needs to acquire new skills while retaining the ones it already uses. However, traditional machine learning approaches typically assume that training data are available before deployment and that models are trained offline on relatively stable data distributions. These assumptions are often unrealistic in robotics, where new objects, environments, and tasks may be encountered continuously.
 
-This lecture examines two approaches to knowledge reuse. **LIBERO** provides a benchmark for studying learning and forgetting across robot manipulation tasks. **PoCo** investigates how separately trained policies can be composed to use information from heterogeneous data sources. This report begins with LIBERO's problem setting and benchmark design. <d-cite key="liu2023libero,wang2024poco"></d-cite>
+Consider a household robot that has learned to open a drawer. Ideally, the knowledge acquired from this task should help the robot learn to open cabinets or other objects with similar mechanisms, rather than requiring it to learn each task from scratch. However, learning to manipulate a new object can update the same model parameters that supported an earlier task, reducing performance on that task. This loss of previously learned behavior is called **catastrophic forgetting**.
+
+These challenges motivate two closely related research areas: **multi-task learning** and **continual learning**. Both aim to improve the efficiency, adaptability, and generalization of robot learning through knowledge sharing and reuse. <d-cite key="liu2023libero"></d-cite>
+
+### Multi-task Learning
+
+**Multi-task learning (MTL)** aims to learn multiple tasks simultaneously, with access to their datasets, by exploiting shared information across related tasks. A conventional multi-task learning architecture consists of a shared backbone, such as a convolutional neural network (CNN) or a Transformer, and multiple task-specific prediction heads. The shared backbone extracts common representations, while each prediction head specializes in a particular task.
+
+In robotics, multi-task learning extends beyond simultaneous predictions. Robots must acquire reusable manipulation skills that can potentially be recombined to accomplish new tasks. For example, grasping, object alignment, and insertion skills may be shared across different manipulation and assembly tasks.
+
+However, collecting robotic demonstrations and training policies from scratch for every new task can be expensive and time-consuming. Moreover, training datasets may originate from heterogeneous sources, including simulations, human demonstrations, and physical robots. These datasets may also contain different sensing modalities, such as RGB images, point clouds, and tactile observations.
+
+Therefore, an important research question is whether independently learned robot policies can be effectively combined without requiring joint retraining. <d-cite key="wang2024poco"></d-cite>
+
+### Continual Learning and Catastrophic Forgetting
+
+**Continual learning (CL)**, also called lifelong learning, studies how an agent learns from a sequence of tasks when earlier training data are only partly available or no longer accessible. Unlike multi-task learning, which trains on several tasks together, continual learning requires a model to continuously acquire new knowledge while preserving previously learned capabilities.
+
+One of the fundamental challenges in continual learning is catastrophic forgetting, where updating a model on new tasks significantly degrades its performance on previously learned tasks.
+
+For example, consider an autonomous vehicle initially trained to operate under snowy conditions. If the vehicle subsequently learns to drive at night and under sunny conditions, sequential fine-tuning may cause it to forget how to operate safely in snow. Although retraining the model using all historical data could mitigate this problem, the computational and storage requirements would increase as more data become available.
+
+Consequently, continual learning must balance two competing objectives:
+
+- **Plasticity:** The ability to acquire new knowledge and adapt to unfamiliar tasks.
+- **Stability:** The ability to preserve previously acquired knowledge and capabilities.
+
+This challenge is commonly referred to as the **stability–plasticity dilemma**. The central challenge is to reuse earlier knowledge to learn new tasks efficiently while preserving earlier skills. <d-cite key="liu2023libero"></d-cite>
+
+The following table summarizes the differences between multi-task learning and continual learning.
+
+| Characteristics | Multi-task Learning | Continual Learning |
+| :--- | :--- | :--- |
+| Task availability | Simultaneous | Sequential |
+| Training data access | Multiple task datasets | Current task and potentially limited historical data |
+| Training process | Joint training | Incremental learning |
+| Primary objective | Knowledge sharing across tasks | Adaptation and retention |
+| Major challenges | Task interference and data heterogeneity | Catastrophic forgetting and limited resources |
+
+### Adaptation, Retention, and Knowledge Transfer
+
+An effective robot learning system should not simply accumulate task-specific behaviors. Instead, it should acquire transferable knowledge that can be reused across different objects, spatial configurations, and task objectives.
+
+Three important concepts characterize knowledge reuse in robot learning:
+
+- **Adaptation:** The ability to adjust existing behaviors to new tasks or environmental conditions.
+- **Retention:** The ability to preserve previously learned capabilities after acquiring new knowledge.
+- **Knowledge transfer:** The ability to leverage previously acquired knowledge to improve learning or execution on new tasks.
+
+However, an important research question remains:
+
+> **What should a robot reuse when learning a new task?**
+
+Possible approaches include reusing historical training demonstrations, preserving model parameters, composing existing policy predictions, or retrieving and adapting previously learned specialist policies.
+
+This lecture examines three complementary approaches to knowledge reuse:
+
+- **LIBERO: Benchmarking Knowledge Transfer for Lifelong Robot Learning (2023)** provides a benchmark for studying knowledge transfer and catastrophic forgetting across sequential robot manipulation tasks. <d-cite key="liu2023libero"></d-cite>
+
+- **PoCo: Policy Composition from and for Heterogeneous Robot Learning (2024)** investigates how separately trained diffusion policies can be composed at inference time to use information from heterogeneous data sources without joint retraining. <d-cite key="wang2024poco"></d-cite>
+
+- **SRSA: Skill Retrieval and Adaptation for Robotic Assembly Tasks (2025)** explores how pretrained specialist policies can be retrieved from a skill library and adapted to previously unseen robotic assembly tasks.
+
+These three papers investigate knowledge reuse at different levels, as summarized below.
+
+| Paper | Knowledge Reuse Mechanism | Primary Research Objective |
+| :--- | :--- | :--- |
+| LIBERO | Historical demonstrations and model parameters | Evaluate knowledge transfer, adaptation, and retention |
+| PoCo | Independently learned policy predictions | Compose policies without joint retraining |
+| SRSA | Pretrained specialist policies | Retrieve and adapt existing skills to new tasks |
+
+While LIBERO evaluates knowledge transfer through continual learning, PoCo focuses on policy composition at inference time, and SRSA investigates skill retrieval and adaptation. Together, these papers provide complementary perspectives on how robots can efficiently acquire new skills while preserving previously learned capabilities.
+
+This report begins with LIBERO's problem setting and benchmark design, followed by PoCo's policy composition framework and SRSA's skill retrieval and adaptation approach. Finally, we compare their methodologies, experimental results, and limitations, summarize the classroom discussions, and explore potential future research directions in continual robot learning.
 
 ## LIBERO: Benchmarking Knowledge Transfer for Lifelong Robot Learning
 
