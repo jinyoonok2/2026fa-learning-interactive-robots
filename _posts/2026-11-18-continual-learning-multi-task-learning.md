@@ -355,11 +355,121 @@ These three metrics make the learning-retention tradeoff visible: a policy can l
 
 ### LIBERO: Experiments and Results
 
-<!-- TODO: Add the empirical comparisons, results, and supporting tables. The evaluation procedure and metric definitions are described above. -->
+#### Comparing continual-learning algorithms
+
+The first experiment compares how effectively different continual-learning algorithms acquire new tasks while retaining previously learned skills. The presentation highlights results from LIBERO-Long and LIBERO-Spatial, which represent two different types of knowledge transfer. LIBERO-Long requires transferring both declarative and procedural knowledge across diverse, long-horizon tasks, while LIBERO-Spatial primarily evaluates transfer across different spatial relationships.
+
+The following table summarizes the experimental results presented in the lecture. Results are reported as the mean and standard error across three random seeds. <d-cite key="liu2023libero"></d-cite>
+
+| Method | Long FWT ↑ | Long NBT ↓ | Long AUC ↑ | Spatial FWT ↑ | Spatial NBT ↓ | Spatial AUC ↑ |
+|---|---:|---:|---:|---:|---:|---:|
+| SEQL | **0.54 ± 0.01** | 0.63 ± 0.01 | 0.15 ± 0.00 | **0.72 ± 0.01** | 0.81 ± 0.01 | 0.20 ± 0.01 |
+| ER | 0.48 ± 0.02 | 0.32 ± 0.04 | **0.32 ± 0.01** | 0.65 ± 0.03 | 0.27 ± 0.03 | 0.56 ± 0.01 |
+| EWC | 0.13 ± 0.02 | 0.22 ± 0.03 | 0.02 ± 0.00 | 0.23 ± 0.01 | 0.33 ± 0.01 | 0.06 ± 0.01 |
+| PackNet | 0.22 ± 0.01 | **0.08 ± 0.01** | 0.25 ± 0.00 | 0.55 ± 0.01 | **0.07 ± 0.02** | **0.63 ± 0.00** |
+| MTL | — | — | 0.48 ± 0.01 | — | — | 0.83 ± 0.00 |
+
+*Bold values indicate the best performance among sequential learning methods for each metric. MTL is included as a joint-training reference.*
+
+Sequential fine-tuning achieves the highest FWT on both task suites, suggesting that a policy without an explicit retention mechanism can acquire new tasks relatively effectively. However, it also experiences the most substantial forgetting. On LIBERO-Long, SEQL achieves an FWT of 0.54 but an NBT of 0.63, resulting in an AUC of only 0.15. Similarly, on LIBERO-Spatial, its NBT reaches 0.81.
+
+These results demonstrate why evaluating only the success rate of the most recently learned task is insufficient. A robot may appear to improve as it encounters new tasks while simultaneously losing its ability to perform earlier ones.
+
+Experience Replay and PackNet demonstrate different approaches to the stability–plasticity dilemma:
+
+- **Experience Replay** achieves the highest AUC among sequential methods on LIBERO-Long (0.32). Rehearsing earlier demonstrations allows the policy to retain some previously learned behaviors while continuing to update its parameters.
+- **PackNet** achieves the lowest NBT on both task suites, indicating stronger retention of previously learned tasks. However, its lower FWT on LIBERO-Long suggests that protecting earlier parameters can restrict the acquisition of new skills.
+- **EWC** achieves relatively low FWT and AUC on both task suites. Penalizing changes to important parameters does not necessarily produce an effective balance between adaptation and retention.
+
+Interestingly, the relative performance of ER and PackNet changes depending on the task suite. PackNet achieves a higher AUC than ER on LIBERO-Spatial (0.63 compared to 0.56), whereas ER performs better on LIBERO-Long (0.32 compared to 0.25).
+
+This suggests that the effectiveness of a continual-learning algorithm depends on the type of knowledge being transferred. An algorithm that effectively preserves knowledge across changes in spatial relationships may not be equally effective when both declarative and procedural knowledge vary simultaneously.
+
+MTL achieves higher AUC than the sequential methods in both comparisons. However, because MTL has simultaneous access to all task datasets, its results should be interpreted as a reference for joint training rather than a directly equivalent continual-learning method. <d-cite key="liu2023libero"></d-cite>
+
+#### Interaction between policy architecture and learning algorithm
+
+Another important research question is whether certain policy architectures are inherently better suited for lifelong robot learning. The authors investigate this by combining ResNet-RNN, ResNet-T, and ViT-T with different continual-learning algorithms.
+
+The following table presents the LIBERO-Long results for Experience Replay and PackNet, as shown in Table 1 of the paper and discussed during the lecture.
+
+| Policy architecture | ER FWT ↑ | ER NBT ↓ | ER AUC ↑ | PackNet FWT ↑ | PackNet NBT ↓ | PackNet AUC ↑ |
+|---|---:|---:|---:|---:|---:|---:|
+| ResNet-RNN | 0.16 ± 0.02 | **0.16 ± 0.02** | 0.08 ± 0.01 | 0.13 ± 0.00 | 0.21 ± 0.01 | 0.03 ± 0.00 |
+| ResNet-T | **0.48 ± 0.02** | 0.32 ± 0.04 | **0.32 ± 0.01** | 0.22 ± 0.01 | **0.08 ± 0.01** | 0.25 ± 0.00 |
+| ViT-T | 0.38 ± 0.05 | 0.29 ± 0.06 | 0.25 ± 0.02 | **0.36 ± 0.01** | 0.14 ± 0.01 | **0.34 ± 0.01** |
+
+The results show that the relative ranking of policy architectures changes depending on the continual-learning algorithm:
+
+- With Experience Replay, ResNet-T achieves the highest AUC of 0.32, outperforming ViT-T at 0.25.
+- With PackNet, ViT-T achieves the highest AUC of 0.34, outperforming ResNet-T at 0.25.
+- ResNet-RNN achieves the lowest NBT under Experience Replay, but its low FWT results in poor overall performance.
+
+The comparison between ResNet-T and ViT-T is particularly interesting because neither architecture consistently outperforms the other. Under Experience Replay, ResNet-T learns new tasks more effectively but also experiences more forgetting. Under PackNet, ViT-T achieves better new-task learning and overall performance despite having higher NBT than ResNet-T.
+
+Furthermore, the ResNet-RNN results illustrate why minimizing forgetting alone is insufficient. A policy that acquires relatively little knowledge may have less knowledge to lose, resulting in a low NBT without necessarily being an effective lifelong learner.
+
+Therefore, policy architectures and continual-learning algorithms should be evaluated jointly rather than treated as independent design choices. A stronger architecture under one learning algorithm does not necessarily remain stronger under another. <d-cite key="liu2023libero"></d-cite>
+
+#### Does pretraining improve lifelong learning?
+
+The authors also investigate whether pretraining on a diverse set of manipulation tasks improves subsequent knowledge transfer.
+
+The motivation is that a robot exposed to many shorter manipulation tasks should acquire reusable representations and behaviors before encountering more complex tasks. For example, prior experience with grasping objects, opening drawers, and placing objects into containers could potentially help a robot learn longer tasks that require combinations of these behaviors.
+
+The experimental procedure consists of two stages:
+
+1. **Pretraining:** Jointly train a policy using behavioral cloning on the 90 short-horizon tasks in LIBERO-90 for 50 epochs, selecting the best saved checkpoint.
+2. **Downstream continual learning:** Initialize the policy with the pretrained parameters and sequentially train on the 10 long-horizon tasks in LIBERO-Long.
+
+The pretrained policies are compared against policies initialized with random weights. A separate MTL reference jointly trains on the downstream task datasets.
+
+| Learning algorithm | Policy architecture | With pretraining | Without pretraining | MTL reference |
+|---|---|---:|---:|---:|
+| ER | ResNet-RNN | 0.04 | 0.08 | 0.20 |
+| ER | ResNet-T | 0.22 | 0.32 | 0.48 |
+| ER | ViT-T | 0.10 | 0.25 | 0.46 |
+| EWC | ResNet-T | 0.01 | 0.02 | 0.48 |
+| PackNet | ResNet-T | 0.17 | 0.25 | 0.48 |
+
+*Downstream performance on LIBERO-Long, comparing behavioral-cloning pretraining on LIBERO-90 with training from scratch.*
+
+Contrary to the initial motivation, the pretrained policies perform worse than their randomly initialized counterparts in every configuration shown in the presentation. For example, the AUC of ER with ResNet-T decreases from 0.32 to 0.22 after pretraining, while PackNet with ResNet-T decreases from 0.25 to 0.17.
+
+One possible interpretation is that representations acquired during supervised pretraining are not necessarily well suited for subsequent adaptation under sequential learning constraints. Knowledge that helps solve shorter manipulation tasks may not automatically transfer to more complex tasks requiring different combinations of behaviors. However, these results alone do not establish the exact cause of the performance degradation.
+
+Importantly, this experiment does not demonstrate that pretraining is generally ineffective for robot learning. Rather, it demonstrates that the particular behavioral-cloning pretraining procedure evaluated in LIBERO does not guarantee improved downstream continual-learning performance. This motivates investigating pretraining objectives that explicitly encourage knowledge reuse and adaptability. <d-cite key="liu2023libero"></d-cite>
 
 ### LIBERO: Limitations and Takeaways
 
-<!-- TODO: Add limitations and evidence-supported takeaways. -->
+#### Limitations
+
+Although LIBERO provides a structured framework for evaluating knowledge transfer in lifelong robot learning, several limitations should be considered when interpreting its results.
+
+- **Simulation-based evaluation:** The experiments are conducted in simulated manipulation environments. Physical robots encounter additional challenges, including sensor noise, disturbances, calibration errors, and uncertainty during contact-rich manipulation. Consequently, successful retention in LIBERO does not necessarily establish reliable retention on physical robots.
+- **Dependence on demonstrations:** The evaluated policies primarily acquire new tasks through behavioral cloning using human demonstrations. The results therefore characterize demonstration-based continual learning rather than more general settings where robots acquire knowledge through autonomous exploration or interaction.
+- **Fixed benchmark task collection:** Although LIBERO provides a procedural task-generation pipeline, the reported experiments use predefined task suites. These controlled suites are useful for reproducible comparisons, but they do not fully capture the unpredictability or scale of an open-ended lifelong-learning environment.
+- **Best-checkpoint evaluation:** The evaluation procedure selects the checkpoint with the highest evaluated success rate on the current task before proceeding. This assumes access to task-specific evaluation rollouts and an explicit checkpoint-selection procedure. A continuously deployed robot may not have the same ability to identify the best checkpoint before adapting to subsequent tasks.
+
+The success-rate metrics also provide limited information about the underlying cause of failure. For example, a reduction in success rate may result from forgetting an object's identity, incorrectly interpreting its spatial relationship, or failing to execute a previously learned manipulation behavior. LIBERO's controlled task suites help distinguish these types of knowledge transfer, but further analysis would be required to identify the precise knowledge that was lost within a policy.
+
+#### Key takeaways
+
+Below are the most important takeaways:
+
+1. **Adaptation does not imply retention.** Sequential fine-tuning can acquire new tasks effectively while experiencing substantial catastrophic forgetting. Therefore, evaluating new-task performance alone is insufficient.
+
+2. **Retention does not imply effective learning.** Protecting previously learned parameters or minimizing NBT does not necessarily produce a useful lifelong learner if the policy struggles to acquire new skills. FWT, NBT, and AUC should be interpreted together.
+
+3. **The type of knowledge transfer matters.** Experience Replay and PackNet perform differently across LIBERO-Long and LIBERO-Spatial, suggesting that the effectiveness of a retention mechanism depends on how tasks differ from one another.
+
+4. **Policy architecture and learning algorithm interact.** ResNet-T performs better with Experience Replay, whereas ViT-T performs better with PackNet in the presented LIBERO-Long comparison. Architecture selection should therefore account for the continual-learning mechanism.
+
+5. **Pretraining does not guarantee positive transfer.** The evaluated behavioral-cloning pretraining procedure reduces downstream performance across the configurations presented in the lecture. Acquiring more knowledge before continual learning does not necessarily make that knowledge easier to reuse.
+
+The central contribution of LIBERO is not a new algorithm that eliminates catastrophic forgetting, but rather a benchmark that makes the tradeoffs between adaptation, retention, and knowledge transfer measurable. By controlling how tasks vary and evaluating performance throughout the learning sequence, LIBERO provides a foundation for investigating which forms of knowledge are transferable and which learning mechanisms are most effective at preserving them. <d-cite key="liu2023libero"></d-cite>
+
+These findings also motivate exploring alternative approaches to knowledge reuse. Instead of continually updating a shared policy and risking interference with earlier skills, another possibility is to preserve independently learned policies and combine their knowledge when needed. This is the central idea explored by PoCo in the following section.
 
 ## PoCo: Policy Composition from and for Heterogeneous Robot Learning
 
