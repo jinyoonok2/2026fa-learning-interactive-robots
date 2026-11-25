@@ -365,12 +365,113 @@ These three metrics make the learning-retention tradeoff visible: a policy can l
 
 ### PoCo: Motivation and Problem
 
-<!-- TODO: Add the motivation, problem setting, and research question. -->
+#### Why heterogeneous robot learning is difficult
+
+Robots can learn manipulation skills from several useful sources: simulated demonstrations, human videos, and real robot teleoperation. Each source offers different strengths. Simulation provides large amounts of relatively inexpensive data, human videos are easy to collect and teach high level motions, and real robot demonstrations capture the actual robot's contact rich interactions. However, these sources also differ in their data distributions, embodiments, control frequencies, and available sensors. Observations may include RGB images, point clouds, tactile images, or robot proprioception.
+
+This creates a data heterogeneity problem: simply pooling all demonstrations into one training dataset is difficult, especially when the observation modalities and domains do not match. Training a separate specialist for every task or data source is possible, but those specialists do not automatically share their useful information. Meanwhile, collecting enough real robot data to cover every task and situation can be expensive.
+
+PoCo (Policy Composition) asks: Can we train policies separately on heterogeneous data and combine their knowledge at inference time, without retraining a single model on all the data?
+
+The paper focuses on generalizable robotic tool use, including hammering, scooping with a spatula, cutting, and using a wrench. The goal is to produce robust manipulation trajectories by combining information from different tasks, behaviors, sensing modalities, and data domains.
+
+#### Core idea
+
+Rather than forcing all data into one model, PoCo learns modular probabilistic policies using diffusion models. At test time, it composes these policies by combining their predictions over the same action trajectory space. This allows, for example, a policy trained with point clouds to be combined with one trained using RGB or tactile observations, or simulation knowledge to be combined with real robot demonstrations.
+
+The important compatibility requirement is that the policies being composed must output trajectories with the same action dimension and horizon. Their observation inputs do not need to be identical. PoCo therefore offers a way to reuse independently learned skills and add new information without discarding previously trained policies. <d-cite key="wang2024poco"></d-cite>
+
+{% include figure.liquid
+path="assets/img/2026-11-18-continual-learning-multi-task-learning/fig2poco.png"
+class="img-fluid rounded z-depth-1"
+alt="Overview of PoCo combining behaviors, data domains, robotic tasks, and sensing modalities through probabilistic policy composition."
+caption="PoCo overview: policy composition combines information across behaviors, tasks, modalities, and domains. Source: Wang et al. (2024), Figure 2."
+zoomable=true
+avoid_scaling=true
+%}
 
 ### PoCo: Method and Formulation
 
-<!-- TODO: Add the method, notation, and mathematical formulation. -->
-<!-- TODO: Add method figures and an interactive walkthrough if useful. -->
+#### 1. Represent each policy as a trajectory distribution
+
+PoCo represents a robot policy as a probability distribution over action trajectories:
+
+$$
+\pi(\tau \mid o)
+$$
+
+Here, $\(\tau\)$ is an action trajectory with horizon $\(H\)$ and action dimension $\(d\)$, and $\(o\)$ is the robot's observation (such as an image, point cloud, or tactile input).
+
+Each policy is learned as a conditional diffusion model. During training, noise is added to expert action trajectories, and a neural network learns to predict that noise. At inference, the model starts with a noisy trajectory and repeatedly denoises it to generate an action sequence. The paper uses a mean squared error noise prediction objective:
+
+$$
+\mathcal{L}_{\mathrm{MSE}}
+=
+\left\|\epsilon_t-\epsilon_\theta(\tau_0+\epsilon_t,t\mid o)\right\|^2
+$$
+
+In this expression, $\(\tau_0\)$ is the demonstrated trajectory, $\(\epsilon_t\)$ is the noise added at diffusion step $\(t\)$, and $\(\epsilon_\theta\)$ is the learned noise prediction network. The key point is that the diffusion model represents a distribution of plausible robot trajectories, rather than outputting only one fixed action.
+
+PoCo trains separate policies for different combinations of:
+
+- **Modality \(M\):** RGB image, point cloud, tactile image, or proprioception.
+- **Domain \(D\):** simulation, human demonstrations, or real robot data.
+- **Task \(T\):** the requested manipulation, such as hammering or scooping.
+- **Behavior cost \(c\):** an additional objective, such as smoothness or workspace safety.
+
+#### 2. Compose policies using a product of distributions
+
+The central mathematical idea is probabilistic composition. Given two trajectory distributions, PoCo defines their composition as
+
+$$
+p_{\mathrm{product}}(\tau)\propto p_1(\tau)\,p_2(\tau).
+$$
+
+This product assigns high probability to trajectories supported by both policies. In other words, the composed policy favors trajectories that satisfy the information or requirements represented by each component.
+
+The paper applies this idea in three main ways:
+
+- **Task level composition:** combines a general policy with task conditioned information, encouraging trajectories that accomplish a specified task. The paper uses a guidance weight to control how strongly the task condition influences generation.
+- **Behavior level composition:** combines a task policy with a cost function, so generated trajectories both perform the task and satisfy desired properties.
+- **Domain level composition:** combines policies trained on different domains or modalities, allowing their learned trajectory information to complement one another.
+
+For behavior composition, a cost $\(c(\tau)\)$ is converted into a probability like preference using a Boltzmann factor:
+
+$$
+p_{\mathrm{cost}}(\tau)\propto \exp[-c(\tau)],
+\qquad
+p_{\mathrm{product}}(\tau)\propto
+p_{\mathrm{cost}}(\tau)\,p(\tau\mid T).
+$$
+
+A lower cost therefore gives a trajectory higher probability. The paper gives smoothness and workspace bound constraints as examples.
+
+#### 3. Combine predictions during diffusion sampling
+
+A product of distributions can be implemented by adding their corresponding score or energy gradient predictions. Intuitively, each component policy contributes a direction that guides the noisy trajectory toward regions it considers likely. The combined direction guides sampling toward trajectories supported by the composed policies.
+
+For example, domain composition adds the predictions from two independently trained diffusion policies:
+
+$$
+\tau^{t-1}
+=
+\tau^t-\gamma_D
+\left(\epsilon_{\theta_1}(\tau^t\mid t)
++\epsilon_{\theta_2}(\tau^t\mid t)\right)+\xi.
+$$
+
+Here, $\(\tau^t\)$ is the current noisy trajectory, $\(\gamma_D\)$ is a composition step size/weight, and $\(\xi\)$ is Gaussian sampling noise. The same general procedure can include task guidance and gradients from behavior costs. The process repeats over denoising steps until a final trajectory is produced.
+
+In short, PoCo does not merge the component networks' parameters or retrain them jointly. It combines their trajectory predictions at inference time. This is what makes the approach modular: new policies or objectives can be added to the composition, provided their outputs use a compatible action trajectory representation. <d-cite key="wang2024poco"></d-cite>
+
+{% include figure.liquid
+path="assets/img/2026-11-18-continual-learning-multi-task-learning/fig3poco.png"
+class="img-fluid rounded z-depth-1"
+alt="Diagram showing diffusion-policy composition across sensing modalities and domains, task-conditioned policies, and behavior costs."
+caption="Policy composition at inference time: domain, task, and behavior composition combine diffusion-model predictions. Source: Wang et al. (2024), Figure 3."
+zoomable=true
+avoid_scaling=true
+%}
 
 ### PoCo: Experiments and Results
 
