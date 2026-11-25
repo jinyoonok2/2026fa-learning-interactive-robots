@@ -540,51 +540,24 @@ avoid_scaling=true
 
 ### PoCo: Experiments and Results
 
-The experiments ask one question: when the test conditions differ from every individual training distribution, can composition adjust a policy's behavior, generalize across tasks, and generalize across domains **without retraining**? PoCo is evaluated on four tool-use task families: scooping with a spatula, cutting with a knife, hammering, and turning a wrench. The metric is task success rate, where success is defined by task-specific thresholds (for example, the pin is hammered down).
+PoCo is evaluated on four tool-use tasks: scooping with a spatula, cutting with a knife, hammering, and turning a wrench. Simulation experiments use the Fleet-Tools benchmark with point-cloud observations, averaging 10 runs over 50 held-out scenes per task. Real-world experiments use a Franka Panda with wrist and overhead cameras and a GelSight tactile finger. The metric is task success rate. <d-cite key="wang2024poco"></d-cite>
 
-- **Simulation:** the Fleet-Tools benchmark in the Drake simulator, using segmented tool and object point clouds as observations. Each task is evaluated with 10 independent runs on 50 held-out scenes.
-- **Real world:** a Franka Panda with a wrist camera, an overhead camera, and a GelSight Svelte tactile finger. Real-robot policies use RGB and tactile images, while human-video and simulation policies use point clouds.
+#### Behavior and task composition
 
-#### Behavior-level composition: adding costs at inference time
-
-Cost functions for smoothness and workspace bounds are composed with a trained simulation policy at a fixed weight $$\gamma_c = 0.1$$:
-
-| Composition | Success ↑ | Smoothness cost ↓ | Workspace cost ↓ |
-|---|---:|---:|---:|
-| Policy only | **0.70** | 0.027 | 0.030 |
-| + Smoothness cost | 0.67 | **0.016** | 0.038 |
-| + Workspace cost | 0.67 | 0.019 | **0.022** |
-
-Each cost lowers its own metric without retraining, at the price of a small drop in success. The two objectives also trade off against each other: adding the smoothness cost increases workspace violation. The authors compare this to trajectory optimization in motion planning. <d-cite key="wang2024poco"></d-cite>
-
-#### Task-level composition: one policy for multiple tools
-
-Task-level composition combines a task-conditioned and an unconditioned multitask policy through classifier-free guidance with weight $$\alpha$$. Here $$\alpha = 0$$ gives the unconditioned policy, $$\alpha = 1$$ the conditioned one, and $$\alpha > 1$$ pushes trajectories further toward the task. In simulation ($$\alpha = 1.5$$), the composed policy outperforms both multitask baselines on all four tasks (Figure 7b below). The real-world results are more mixed:
+Adding smoothness or workspace costs at test time lowered each cost (smoothness from 0.027 to 0.016, workspace violation from 0.030 to 0.022) while success fell slightly, from 0.70 to 0.67, without retraining. Task composition, implemented as classifier-free guidance between conditioned and unconditioned multitask policies, outperformed both multitask baselines on all four tasks in simulation. On the real robot the results were more mixed:
 
 | Policy | Spatula | Knife | Hammer | Wrench | Average |
 |---|---:|---:|---:|---:|---:|
-| Single-task | 8/10 | 8/10 | 5/10 | 5/10 | **65% ± 17%** |
+| Single-task | 8/10 | 8/10 | 5/10 | 5/10 | 65% ± 17% |
 | Multitask, unconditioned | 6/10 | 5/10 | 5/10 | 4/10 | 50% ± 8% |
 | Multitask, conditioned | 8/10 | 5/10 | 6/10 | 2/10 | 53% ± 25% |
-| Multitask composition ($$\alpha = 0.1$$) | 7/10 | 4/10 | 7/10 | 4/10 | 55% ± 17% |
 | Multitask composition ($$\alpha = 2$$) | 8/10 | 4/10 | 7/10 | 5/10 | 60% ± 18% |
 
-Composition is the strongest *multitask* approach, but separate single-task policies still have the highest average. With only 10 trials per task, the differences fall within the reported standard deviations. The authors also note that $$\alpha$$ must stay within a limited range to remain effective and stable. <d-cite key="wang2024poco"></d-cite>
+Composition was the best multitask approach, but separate single-task policies still had the highest average, and with 10 trials per task the differences fall within the reported standard deviations.
 
-#### Domain-level composition: combining simulation, human, and real data
+#### Domain composition
 
-Domain-level composition is where PoCo shows its largest gains. In simulation, policies trained only on human-video or real-robot data perform poorly because of the domain gap. Composing either one with a simulation-trained policy (weight $$\gamma_D$$) substantially increases success:
-
-{% include figure.liquid
-path="assets/img/2026-11-18-continual-learning-multi-task-learning/poco-fig-07-simulation-composition.png"
-class="img-fluid rounded z-depth-1"
-alt="Two bar charts. Left: success rate of Real+Sim and Human+Sim compositions as the domain composition weight varies. Right: success of unconditioned, conditioned, and composed multitask policies on hammer, wrench, spatula, and knife tasks."
-caption="Composition in simulation. (a) Domain composition: adding a simulation policy to a real-data or human-data policy (γ<sub>D</sub> > 0) increases success over no composition (γ<sub>D</sub> = 0). (b) Task composition outperforms unconditioned and conditioned multitask policies on every tool. Source: Wang et al. (2024), Figure 7. The paper's caption labels (a) and (b) in the reverse order; the descriptions here follow the plotted data."
-zoomable=true
-avoid_scaling=true
-%}
-
-On the real robot, the authors test a hammer-reaching task under four scene changes, with 5 trials each:
+Domain composition produced the largest gains. On a real-world hammer-reaching task tested under four scene changes (5 trials each), composed policies outperformed each of their components:
 
 | Scene change | Human | Simulation | Real robot | Human + Real | Sim + Real |
 |---|---:|---:|---:|---:|---:|
@@ -592,55 +565,24 @@ On the real robot, the authors test a hammer-reaching task under four scene chan
 | Vary robot and tool pose | 1/5 | 5/5 | 4/5 | 5/5 | 5/5 |
 | Distractor objects | 0/5 | 5/5 | 2/5 | 3/5 | 5/5 |
 | Novel object instance | 1/5 | 3/5 | 2/5 | 1/5 | 5/5 |
-| **Total** | 15% | 90% | 50% | 65% | **100%** |
-
-Both compositions outperform their individual components. Human-only (15%) and real-only (50%) policies are weak on their own, yet their composition reaches 65%. Composing the simulation and real policies succeeds in every trial, covering the cases where one policy fails alone. <d-cite key="wang2024poco"></d-cite>
+| Total | 15% | 90% | 50% | 65% | 100% |
 
 {% include figure.liquid
 path="assets/img/2026-11-18-continual-learning-multi-task-learning/poco-fig-09-domain-composition-real.png"
 class="img-fluid rounded z-depth-1"
 alt="Grid of real-robot photos comparing Real, Real plus Human, Simulation, and Simulation plus Real policies under different distractors, object instances, and object, pose, and tool changes."
-caption="Real-world domain composition. Rows show distractors, a new object instance, and changed object, pose, and tool. The Simulation + Real composition succeeds in all three examples shown. Source: Wang et al. (2024), Figure 9."
+caption="Real-world domain composition. The Simulation + Real composition succeeds in all three scene variations shown. Source: Wang et al. (2024), Figure 9."
 zoomable=true
 avoid_scaling=true
 %}
 
-The composition weight matters here as well. On the hammering task, success rises and then falls as $$\gamma_D$$ moves across its range, so the best results come from an intermediate weight (paper Figure 10).
-
-#### Ablations: is composition better than pooling the data?
-
-Real-world ablations report the change in success relative to the full system (simulation + real composition, tactile input, and closed-loop trajectory prediction):
-
-| Ablation | Relative change in success |
-|---|---:|
-| Pool simulation point clouds and real images into one model | −75% |
-| Remove tactile input | −38% |
-| Remove trajectory rollouts | −24% |
-
-The pooled baseline performs worst even though it uses a larger model. The authors attribute this to the domain and modality gap between the two datasets: without a very large dataset, one network struggles to use both. Tactile sensing matters most in tasks that need strong grip forces and external contact, such as using a wrench. <d-cite key="wang2024poco"></d-cite>
-
-Overall, the authors report about a **20% success-rate improvement** over baselines in both simulation and the real world. The clearest evidence is for domain composition. Task-level composition helps less consistently on the real robot.
+In an ablation, pooling simulation point clouds and real images into a single model reduced success by 75% relative to composition, despite the larger model. Removing tactile input reduced success by 38%. Composition weights mattered throughout: performance peaked at intermediate values of $$\alpha$$ and $$\gamma_D$$. <d-cite key="wang2024poco"></d-cite>
 
 ### PoCo: Limitations and Takeaways
 
-#### Limitations
+PoCo combines policies at a single moment rather than sequencing them, so it was evaluated only on short-horizon tool use. All composed policies must share an action space and be roughly aligned in horizon, scale, and control frequency. Each denoising step evaluates every component, so inference slows as policies are added; two policies already limit control to 5 Hz. Composition weights are tuned by hand within a narrow stable range, policies still fail in delicate contact-rich tasks, and the evaluation is small: four tasks with 5 to 10 real-world trials per condition. <d-cite key="wang2024poco"></d-cite>
 
-- **Short-horizon composition only:** Policies are combined at a single moment, not sequenced over time. PoCo cannot chain skills over a long task, and the authors evaluate it only on short tool-use motions.
-- **Policies must be aligned:** All composed policies must share the same action space, and they are assumed to be roughly matched in horizon, scale, and control frequency. This limits which existing policies can be combined.
-- **Inference cost grows with each policy:** Every denoising step evaluates every component model. Combining two policies already restricts control to 5 Hz, and the cost grows linearly as more policies are added.
-- **Composition weights must be tuned:** Both $$\alpha$$ and $$\gamma_D$$ have a narrow effective range. The appendix describes tuning by hand, increasing a weight until the policy becomes unstable.
-- **Contact-rich failures:** Policies can overfit and fail in tasks requiring delicate contact control. Examples include imprecise wrench turning and poor contact in the spatula and knife tasks. Transfer from one tool to another of the same class is also limited.
-- **Small evaluation scale:** The evaluation uses four tasks and 5–10 real-world trials per condition. Behavior costs are tested only in simulation, and domain composition only uses models trained on the authors' own data.
-
-#### Key takeaways
-
-1. **Composition can outperform pooling.** When datasets differ in modality and domain, training separate policies and combining their predictions worked better than forcing all of the data into one network.
-2. **Separate policies can cover each other's weaknesses.** The product of distributions favors trajectories supported by both policies. A robust simulation policy and a scene-accurate real-world policy together succeeded where each failed alone.
-3. **Behavior can be adjusted at deployment time.** Costs such as smoothness and workspace bounds can be added at test time without collecting new data or retraining.
-4. **Composition weights are tuned hyperparameters.** Performance depends on choosing appropriate weights, and results are least consistent for real-world multitask learning.
-5. **A modular approach to retention.** This connects to the lecture topic, though the paper does not evaluate PoCo in a sequential continual-learning benchmark. Existing policies are never updated when new data or tasks arrive, so earlier skills cannot be overwritten in the way LIBERO's sequential fine-tuning showed. The trade-offs are inference cost that grows with each module and the need to align their action spaces.
-
-PoCo reuses knowledge by combining the *predictions* of fixed policies. The next paper, SRSA, keeps a library of specialist policies but takes a different route: it retrieves the most relevant one and adapts its *parameters* to a new task. <d-cite key="wang2024poco"></d-cite>
+The main lesson is that heterogeneous data can be used by training separate policies and combining their predictions, which worked better than pooling the data into one network. For continual learning, this suggests a modular form of retention: existing policies are never updated, so new data or tasks cannot overwrite earlier skills, although the paper does not test this in a sequential benchmark. The costs are growing inference time and the need for compatible action spaces. SRSA also keeps a library of specialist policies but, instead of combining their predictions, retrieves the most relevant one and adapts its parameters to the new task.
 
 ## SRSA: Skill Retrieval and Adaptation for Robotic Assembly Tasks
 
