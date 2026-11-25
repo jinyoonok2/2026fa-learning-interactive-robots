@@ -5,7 +5,7 @@ description: "Lifelong robot learning, preventing catastrophic forgetting, and p
 date: 2026-11-18
 future: true
 htmlwidgets: true
-ready: false
+ready: true
 
 # Reporter team authors
 authors:
@@ -51,8 +51,7 @@ toc:
 ---
 
 <!--
-Report draft awaiting team review.
-Keep ready: false until everyone has reviewed the report.
+Report marked ready for submission.
 Add verified BibTeX entries to assets/bibliography/2026-11-18-continual-learning-multi-task-learning.bib.
 Store figures in assets/img/2026-11-18-continual-learning-multi-task-learning/.
 Store interactive HTML in assets/html/2026-11-18-continual-learning-multi-task-learning/.
