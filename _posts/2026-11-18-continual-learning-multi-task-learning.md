@@ -62,7 +62,7 @@ Store interactive HTML in assets/html/2026-11-18-continual-learning-multi-task-l
 
 ### Background and Motivation
 
-Robots encounter new objects and tasks after deployment. Learning to open a drawer might help a robot learn to open a cabinet, but updating the model for the new task can also reduce its performance on earlier ones. This loss of previously learned behavior is called catastrophic forgetting. <d-cite key="liu2023libero"></d-cite>
+Robots encounter new objects and tasks after deployment. Learning to open a drawer might help a robot learn to open a cabinet, but updating the model for the new task can also reduce its performance on earlier ones. This loss of previously learned behavior is called catastrophic forgetting.
 
 ### Multi-task Learning
 
@@ -70,7 +70,7 @@ Multi-task learning (MTL) trains on several task datasets jointly so that relate
 
 ### Continual Learning and Catastrophic Forgetting
 
-Continual learning (CL), or lifelong learning, trains on tasks in sequence with limited access to earlier data. It must balance plasticity, the ability to learn new skills, with stability, the ability to retain old ones. Keeping all past data for joint retraining would increase storage and training costs as tasks accumulate. <d-cite key="liu2023libero"></d-cite>
+Continual learning (CL), or lifelong learning, trains on tasks in sequence with limited access to earlier data. It must balance plasticity, the ability to learn new skills, with stability, the ability to retain old ones. Keeping all past data for joint retraining would increase storage and training costs as tasks accumulate.
 
 | Characteristics | Multi-task Learning | Continual Learning |
 | :--- | :--- | :--- |
@@ -86,7 +86,7 @@ This lecture examines what a robot can reuse when learning a new task: training 
 
 | Paper | Knowledge Reuse Mechanism | Primary Research Objective |
 | :--- | :--- | :--- |
-| LIBERO <d-cite key="liu2023libero"></d-cite> | Benchmark methods that reuse demonstrations or protect parameters | Measure transfer and forgetting across tasks |
+| LIBERO | Benchmark methods that reuse demonstrations or protect parameters | Measure transfer and forgetting across tasks |
 | PoCo <d-cite key="wang2024poco"></d-cite> | Compose independently trained policy predictions | Use heterogeneous data without joint retraining |
 | SRSA <d-cite key="guo2025srsa"></d-cite> | Retrieve and adapt specialist policies | Learn new assembly tasks from existing skills |
 
@@ -98,14 +98,14 @@ Figures are from the paper and supplement; captions are our summaries.
 
 ### LIBERO: Motivation and Problem
 
-After learning new tasks, a robot may fail to retrieve juice because it forgets the object's location or the opening and grasping motions. LIBERO separates these sources of forgetting into declarative and procedural knowledge. <d-cite key="liu2023libero"></d-cite>
+After learning new tasks, a robot may fail to retrieve juice because it forgets the object's location or the opening and grasping motions. LIBERO separates these sources of forgetting into declarative and procedural knowledge.
 
 | Type of knowledge | What the robot needs to know | Manipulation example |
 |---|---|---|
 | Declarative knowledge | Object concepts, locations, and spatial relationships. | Identify the juice and locate it inside the refrigerator. |
 | Procedural knowledge | Motions and behaviors needed to accomplish a goal. | Open the door, grasp the juice, and retrieve it. |
 
-To isolate what transfers, LIBERO varies objects, spatial relationships, and task goals. It examines five questions: <d-cite key="liu2023libero"></d-cite>
+To isolate what transfers, LIBERO varies objects, spatial relationships, and task goals. It examines five questions:
 
 1. Knowledge transfer: Which task changes are hardest to learn and retain?
 2. Architecture: How should a policy combine images, language, robot state, and observation history?
@@ -117,7 +117,7 @@ To isolate what transfers, LIBERO varies objects, spatial relationships, and tas
    path="assets/img/2026-11-18-continual-learning-multi-task-learning/libero-fig-01-benchmark-overview.png"
    class="img-fluid rounded z-depth-1"
    alt="LIBERO overview showing four task suites and five research topics for lifelong robot learning."
-   caption="LIBERO overview: four task suites and five research topics for lifelong robot learning. Source: Liu et al. (2023), main paper, Figure 1."
+   caption="LIBERO overview: four task suites and five research topics. The source figure reverses the Spatial/Object descriptions; our task-suite table follows Section 4.2. Source: Liu et al. (2023), main paper, Figure 1."
    zoomable=true
    avoid_scaling=true
 %}
@@ -130,7 +130,7 @@ To isolate what transfers, LIBERO varies objects, spatial relationships, and tas
 
 The robot learns $$K$$ tasks in sequence. Each task $$\mathcal T_k=(\mu_0^k,g_k)$$ specifies a starting-state distribution $$\mu_0^k$$ and a success predicate $$g_k$$. Tasks share state and action spaces and environment dynamics.
 
-For task $$k$$, the learner receives demonstrations $$D_k$$. Earlier datasets are not fully available, though replay can retain selected examples. After each training stage, evaluation revisits earlier tasks to measure retention. <d-cite key="liu2023libero"></d-cite>
+For task $$k$$, the learner receives demonstrations $$D_k$$. Earlier datasets are not fully available, though replay can retain selected examples. After each training stage, evaluation revisits earlier tasks to measure retention.
 
 #### Generating tasks with explicit goals
 
@@ -140,7 +140,7 @@ The pipeline uses the Robosuite simulator:
 2. Specify the scene layout, object placements, and initial states.
 3. Define goal predicates in a PDDL-style task file. A drawer task, for example, succeeds when the drawer is open and the bowl is inside.
 
-The predicates define success; the learned policy produces actions. Ego4D supplies language templates, while robot demonstrations are collected separately. <d-cite key="liu2023libero"></d-cite>
+The predicates define success; the learned policy produces actions. Ego4D supplies language templates, while robot demonstrations are collected separately.
 
 {% include figure.liquid
    path="assets/img/2026-11-18-continual-learning-multi-task-learning/libero-fig-02-task-generation.png"
@@ -180,7 +180,7 @@ The temporal backbone summarizes the episode's observation history. The GMM head
    path="assets/img/2026-11-18-continual-learning-multi-task-learning/libero-supp-fig-05-policy-architectures.png"
    class="img-fluid rounded z-depth-1"
    alt="Three policy architectures combining camera images, language embeddings, and robot joint and gripper information with recurrent or transformer temporal processing."
-   caption="Three policies tested in LIBERO: ResNet-RNN, ResNet-T, and ViT-T. Each combines images, language, and robot state to predict actions. Source: Liu et al. (2023), supplement, Figure 5."
+   caption="Three policies tested in LIBERO, left to right: ResNet-RNN, ResNet-T, and ViT-T. Each combines images, language, and robot state to predict actions. Source: Liu et al. (2023), supplement, Figure 5."
    zoomable=true
    avoid_scaling=true
 %}
@@ -198,7 +198,7 @@ ResNet uses language-conditioned FiLM to rescale and shift visual features, foll
 
 #### Learning algorithms: preserving earlier skills
 
-LIBERO pairs these architectures with three continual-learning algorithms and two reference methods. <d-cite key="liu2023libero"></d-cite>
+LIBERO pairs these architectures with three continual-learning algorithms and two reference methods.
 
 | Method | How training works | Resource or constraint |
 |---|---|---|
@@ -212,7 +212,7 @@ PackNet's masks protect earlier subnetworks while allowing later tasks to use th
 
 #### Demonstrations and training procedure
 
-Policies are trained by behavioral cloning on 50 human demonstrations per task, collected through teleoperation with a 3Dconnexion SpaceMouse. <d-cite key="liu2023libero"></d-cite> A per-step negative log-likelihood loss is:
+Policies are trained by behavioral cloning on 50 human demonstrations per task, collected through teleoperation with a 3Dconnexion SpaceMouse. A per-step negative log-likelihood loss is:
 
 $$
 \mathcal L_{\mathrm{BC}}(\theta;D_k)
@@ -237,15 +237,6 @@ PackNet adds 50 epochs of fine-tuning after pruning; the supplement reports metr
 
 The slides use three success-rate metrics: forward transfer (FWT) for new-task learning, negative backward transfer (NBT) for forgetting, and area under the curve (AUC) for their combination. <d-cite key="liu2023libero"></d-cite>
 
-{% include figure.liquid
-   path="assets/img/2026-11-18-continual-learning-multi-task-learning/libero-fig-03-evaluation-metrics.png"
-   class="img-fluid rounded z-depth-1"
-   alt="Schematic success-rate curve for one task during acquisition and after learning later tasks, with areas illustrating FWT, NBT, and AUC."
-   caption="Schematic of LIBERO's evaluation metrics: FWT (new-task learning), NBT (forgetting), and AUC (learning and retention). Source: Liu et al. (2023), main paper, Figure 3."
-   zoomable=true
-   avoid_scaling=true
-%}
-
 The equations use the following notation:
 
 | Symbol | Meaning |
@@ -259,6 +250,15 @@ The equations use the following notation:
 
 Thus, $$c_{k,k}$$ is task $$k$$'s best acquisition success rate, and $$c_{\tau,k}$$ is its later performance. For these metrics, the learning curve is held constant after the earliest best checkpoint.
 
+{% include figure.liquid
+   path="assets/img/2026-11-18-continual-learning-multi-task-learning/libero-fig-03-evaluation-metrics.png"
+   class="img-fluid rounded z-depth-1"
+   alt="Schematic success-rate curve for one task during acquisition and after learning later tasks, with areas illustrating FWT, NBT, and AUC."
+   caption="Schematic of LIBERO's evaluation metrics: FWT (new-task learning), NBT (forgetting), and AUC (learning and retention). Source: Liu et al. (2023), main paper, Figure 3."
+   zoomable=true
+   avoid_scaling=true
+%}
+
 ##### Forward transfer: learning a new task
 
 $$
@@ -270,7 +270,7 @@ $$
 \end{aligned}
 $$
 
-Source: W13 presentation, "LIBERO - Evaluation Metrics," slide 29 (PDF page 38); LIBERO, Section 5.1, Equation (3). <d-cite key="liu2023libero"></d-cite>
+Source: W13 presentation, "LIBERO - Evaluation Metrics," slide 29 (PDF page 38); LIBERO, Section 5.1, Equation (3).
 
 FWT averages success across the 11 learning checkpoints, then across tasks. Higher values indicate faster or stronger learning. This definition does not subtract a from-scratch baseline, so it does not isolate the benefit of prior learning.
 
@@ -286,7 +286,7 @@ $$
 \end{aligned}
 $$
 
-Source: W13 presentation, "LIBERO - Evaluation Metrics," slide 29 (PDF page 38); LIBERO, Section 5.1, Equation (3). <d-cite key="liu2023libero"></d-cite>
+Source: W13 presentation, "LIBERO - Evaluation Metrics," slide 29 (PDF page 38); LIBERO, Section 5.1, Equation (3).
 
 NBT averages the drop from task $$k$$'s best learned performance to its performance after later tasks. Lower values indicate better retention; negative values indicate improvement. A drop from 0.8 to 0.5 contributes 0.3.
 
@@ -304,7 +304,7 @@ $$
 \end{aligned}
 $$
 
-Source: W13 presentation, "LIBERO - Evaluation Metrics," slide 29 (PDF page 38); LIBERO, Section 5.1, Equation (3). <d-cite key="liu2023libero"></d-cite>
+Source: W13 presentation, "LIBERO - Evaluation Metrics," slide 29 (PDF page 38); LIBERO, Section 5.1, Equation (3).
 
 AUC averages a task's acquisition score, $$\mathrm{FWT}_k$$, with its success rates after later tasks, then averages across tasks. The denominator counts one acquisition stage and $$K-k$$ later stages. Higher AUC is better.
 
