@@ -41,14 +41,18 @@ toc:
       - name: "PoCo: Method and Formulation"
       - name: "PoCo: Experiments and Results"
       - name: "PoCo: Limitations and Takeaways"
-  - name: "Comparison and Synthesis"
+  - name: "SRSA: Skill Retrieval and Adaptation for Robotic Assembly Tasks"
+    subsections:
+      - name: "Motivation and Problem"
+      - name: "Method and Formulation"
+      - name: "Experiments and Results"
+      - name: "Limitations and Takeaways"
   - name: "Discussion"
 ---
 
 <!--
-Report in progress. The introduction, LIBERO motivation and methods, figure captions, and classroom discussion have been drafted.
-LIBERO results and limitations, the PoCo sections, and the comparison remain to be written.
-Keep ready: false until the report is complete and reviewed.
+Report draft awaiting team review.
+Keep ready: false until everyone has reviewed the report.
 Add verified BibTeX entries to assets/bibliography/2026-11-18-continual-learning-multi-task-learning.bib.
 Store figures in assets/img/2026-11-18-continual-learning-multi-task-learning/.
 Store interactive HTML in assets/html/2026-11-18-continual-learning-multi-task-learning/.
@@ -58,38 +62,15 @@ Store interactive HTML in assets/html/2026-11-18-continual-learning-multi-task-l
 
 ### Background and Motivation
 
-A robot working in a changing environment needs to acquire new skills while retaining the ones it already uses. However, traditional machine learning approaches typically assume that training data are available before deployment and that models are trained offline on relatively stable data distributions. These assumptions are often unrealistic in robotics, where new objects, environments, and tasks may be encountered continuously.
-
-Consider a household robot that has learned to open a drawer. Ideally, the knowledge acquired from this task should help the robot learn to open cabinets or other objects with similar mechanisms, rather than requiring it to learn each task from scratch. However, learning to manipulate a new object can update the same model parameters that supported an earlier task, reducing performance on that task. This loss of previously learned behavior is called **catastrophic forgetting**.
-
-These challenges motivate two closely related research areas: **multi-task learning** and **continual learning**. Both aim to improve the efficiency, adaptability, and generalization of robot learning through knowledge sharing and reuse. <d-cite key="liu2023libero"></d-cite>
+Robots encounter new objects and tasks after deployment. Learning to open a drawer might help a robot learn to open a cabinet, but updating the model for the new task can also reduce its performance on earlier ones. This loss of previously learned behavior is called catastrophic forgetting. <d-cite key="liu2023libero"></d-cite>
 
 ### Multi-task Learning
 
-**Multi-task learning (MTL)** aims to learn multiple tasks simultaneously, with access to their datasets, by exploiting shared information across related tasks. A conventional multi-task learning architecture consists of a shared backbone, such as a convolutional neural network (CNN) or a Transformer, and multiple task-specific prediction heads. The shared backbone extracts common representations, while each prediction head specializes in a particular task.
-
-In robotics, multi-task learning extends beyond simultaneous predictions. Robots must acquire reusable manipulation skills that can potentially be recombined to accomplish new tasks. For example, grasping, object alignment, and insertion skills may be shared across different manipulation and assembly tasks.
-
-However, collecting robotic demonstrations and training policies from scratch for every new task can be expensive and time-consuming. Moreover, training datasets may originate from heterogeneous sources, including simulations, human demonstrations, and physical robots. These datasets may also contain different sensing modalities, such as RGB images, point clouds, and tactile observations.
-
-Therefore, an important research question is whether independently learned robot policies can be effectively combined without requiring joint retraining. <d-cite key="wang2024poco"></d-cite>
+Multi-task learning (MTL) trains on several task datasets jointly so that related tasks can share representations and behaviors. Robotic datasets may differ in their sensors, embodiments, and simulation or real-world conditions. PoCo asks whether policies trained separately on these sources can share information at inference time without joint retraining. <d-cite key="wang2024poco"></d-cite>
 
 ### Continual Learning and Catastrophic Forgetting
 
-**Continual learning (CL)**, also called lifelong learning, studies how an agent learns from a sequence of tasks when earlier training data are only partly available or no longer accessible. Unlike multi-task learning, which trains on several tasks together, continual learning requires a model to continuously acquire new knowledge while preserving previously learned capabilities.
-
-One of the fundamental challenges in continual learning is catastrophic forgetting, where updating a model on new tasks significantly degrades its performance on previously learned tasks.
-
-For example, consider an autonomous vehicle initially trained to operate under snowy conditions. If the vehicle subsequently learns to drive at night and under sunny conditions, sequential fine-tuning may cause it to forget how to operate safely in snow. Although retraining the model using all historical data could mitigate this problem, the computational and storage requirements would increase as more data become available.
-
-Consequently, continual learning must balance two competing objectives:
-
-- **Plasticity:** The ability to acquire new knowledge and adapt to unfamiliar tasks.
-- **Stability:** The ability to preserve previously acquired knowledge and capabilities.
-
-This challenge is commonly referred to as the **stability–plasticity dilemma**. The central challenge is to reuse earlier knowledge to learn new tasks efficiently while preserving earlier skills. <d-cite key="liu2023libero"></d-cite>
-
-The following table summarizes the differences between multi-task learning and continual learning.
+Continual learning (CL), or lifelong learning, trains on tasks in sequence with limited access to earlier data. It must balance plasticity, the ability to learn new skills, with stability, the ability to retain old ones. Keeping all past data for joint retraining would increase storage and training costs as tasks accumulate. <d-cite key="liu2023libero"></d-cite>
 
 | Characteristics | Multi-task Learning | Continual Learning |
 | :--- | :--- | :--- |
@@ -101,66 +82,36 @@ The following table summarizes the differences between multi-task learning and c
 
 ### Adaptation, Retention, and Knowledge Transfer
 
-An effective robot learning system should not simply accumulate task-specific behaviors. Instead, it should acquire transferable knowledge that can be reused across different objects, spatial configurations, and task objectives.
-
-Three important concepts characterize knowledge reuse in robot learning:
-
-- **Adaptation:** The ability to adjust existing behaviors to new tasks or environmental conditions.
-- **Retention:** The ability to preserve previously learned capabilities after acquiring new knowledge.
-- **Knowledge transfer:** The ability to leverage previously acquired knowledge to improve learning or execution on new tasks.
-
-However, an important research question remains:
-
-> **What should a robot reuse when learning a new task?**
-
-Possible approaches include reusing historical training demonstrations, preserving model parameters, composing existing policy predictions, or retrieving and adapting previously learned specialist policies.
-
-This lecture examines three complementary approaches to knowledge reuse:
-
-- **LIBERO: Benchmarking Knowledge Transfer for Lifelong Robot Learning (2023)** provides a benchmark for studying knowledge transfer and catastrophic forgetting across sequential robot manipulation tasks. <d-cite key="liu2023libero"></d-cite>
-
-- **PoCo: Policy Composition from and for Heterogeneous Robot Learning (2024)** investigates how separately trained diffusion policies can be composed at inference time to use information from heterogeneous data sources without joint retraining. <d-cite key="wang2024poco"></d-cite>
-
-- **SRSA: Skill Retrieval and Adaptation for Robotic Assembly Tasks (2025)** explores how pretrained specialist policies can be retrieved from a skill library and adapted to previously unseen robotic assembly tasks.
-
-These three papers investigate knowledge reuse at different levels, as summarized below.
+This lecture examines what a robot can reuse when learning a new task: training examples and parameters, policy predictions, or specialist skills.
 
 | Paper | Knowledge Reuse Mechanism | Primary Research Objective |
 | :--- | :--- | :--- |
-| LIBERO | Historical demonstrations and model parameters | Evaluate knowledge transfer, adaptation, and retention |
-| PoCo | Independently learned policy predictions | Compose policies without joint retraining |
-| SRSA | Pretrained specialist policies | Retrieve and adapt existing skills to new tasks |
-
-While LIBERO evaluates knowledge transfer through continual learning, PoCo focuses on policy composition at inference time, and SRSA investigates skill retrieval and adaptation. Together, these papers provide complementary perspectives on how robots can efficiently acquire new skills while preserving previously learned capabilities.
-
-This report begins with LIBERO's problem setting and benchmark design, followed by PoCo's policy composition framework and SRSA's skill retrieval and adaptation approach. Finally, we compare their methodologies, experimental results, and limitations, summarize the classroom discussions, and explore potential future research directions in continual robot learning.
+| LIBERO <d-cite key="liu2023libero"></d-cite> | Benchmark methods that reuse demonstrations or protect parameters | Measure transfer and forgetting across tasks |
+| PoCo <d-cite key="wang2024poco"></d-cite> | Compose independently trained policy predictions | Use heterogeneous data without joint retraining |
+| SRSA <d-cite key="guo2025srsa"></d-cite> | Retrieve and adapt specialist policies | Learn new assembly tasks from existing skills |
 
 ## LIBERO: Benchmarking Knowledge Transfer for Lifelong Robot Learning
 
-Liu et al. introduce LIBERO as a simulation benchmark for **lifelong learning in decision making**. It combines a procedure for generating manipulation tasks, 130 fixed benchmark tasks, human demonstrations, and implementations of several learning algorithms and policy architectures. Its contribution is a common framework for investigating what transfers between tasks, what is forgotten, and how the learning setup affects both. <d-cite key="liu2023libero"></d-cite>
+LIBERO is a simulation benchmark for lifelong robot learning. It provides 130 manipulation tasks, human demonstrations, and baseline algorithms and policy architectures for studying transfer and forgetting. <d-cite key="liu2023libero"></d-cite>
 
-The figures below are reproduced from LIBERO and its supplementary material; the captions are our explanations of the original artwork.
+Figures are from the paper and supplement; captions are our summaries.
 
 ### LIBERO: Motivation and Problem
 
-Consider a robot that has learned to retrieve juice from a refrigerator. After learning other tasks, it might fail because it no longer identifies the correct object or location, or because it no longer executes the opening and grasping motions successfully. The final failure alone does not identify which knowledge was lost. LIBERO motivates its design through this distinction between two kinds of knowledge. <d-cite key="liu2023libero"></d-cite>
+After learning new tasks, a robot may fail to retrieve juice because it forgets the object's location or the opening and grasping motions. LIBERO separates these sources of forgetting into declarative and procedural knowledge. <d-cite key="liu2023libero"></d-cite>
 
 | Type of knowledge | What the robot needs to know | Manipulation example |
 |---|---|---|
 | Declarative knowledge | Object concepts, locations, and spatial relationships. | Identify the juice and locate it inside the refrigerator. |
 | Procedural knowledge | Motions and behaviors needed to accomplish a goal. | Open the door, grasp the juice, and retrieve it. |
 
-Robot manipulation requires these forms of knowledge to work together across a sequence of decisions. Recognizing the correct object is useful only if the robot can act on it, and a small execution error can prevent a later step from succeeding. This makes it difficult to diagnose transfer and forgetting using a final success rate alone.
+To isolate what transfers, LIBERO varies objects, spatial relationships, and task goals. It examines five questions: <d-cite key="liu2023libero"></d-cite>
 
-LIBERO addresses this problem by controlling which aspects of tasks change. Some task suites emphasize spatial relationships, object identities, or goals separately; another combines several kinds of change. This supports five research questions:
-
-1. **Knowledge transfer:** How does learning change when tasks vary in objects, spatial relationships, goals, or a mixture of these?
-2. **Policy architecture:** How should a policy combine images, language, robot state, and observation history?
-3. **Learning algorithm:** Which mechanisms preserve earlier skills while allowing new learning?
-4. **Task ordering:** How sensitive is learning to the order in which tasks arrive?
-5. **Pretraining:** Does training on a larger set of tasks help subsequent lifelong learning?
-
-The benchmark provides a way to investigate these questions by varying task distributions, architectures, and learning algorithms within a shared evaluation framework. <d-cite key="liu2023libero"></d-cite>
+1. Knowledge transfer: Which task changes are hardest to learn and retain?
+2. Architecture: How should a policy combine images, language, robot state, and observation history?
+3. Learning algorithm: How do replay, regularization, and freezing affect learning?
+4. Task order: Do results change when tasks arrive in a different order?
+5. Pretraining: Does earlier training on a larger task set help?
 
 {% include figure.liquid
    path="assets/img/2026-11-18-continual-learning-multi-task-learning/libero-fig-01-benchmark-overview.png"
@@ -177,19 +128,19 @@ The benchmark provides a way to investigate these questions by varying task dist
 
 #### Sequential learning setup
 
-The robot encounters tasks $$\mathcal T_1,\ldots,\mathcal T_K$$ in sequence. Each task $$\mathcal T_k=(\mu_0^k,g_k)$$ specifies an initial-state distribution $$\mu_0^k$$ and a goal predicate $$g_k$$ that indicates whether a state satisfies the task. The tasks share the robot's state and action spaces and underlying environment dynamics.
+The robot learns $$K$$ tasks in sequence. Each task $$\mathcal T_k=(\mu_0^k,g_k)$$ specifies a starting-state distribution $$\mu_0^k$$ and a success predicate $$g_k$$. Tasks share state and action spaces and environment dynamics.
 
-For each task, the learner receives a demonstration dataset $$D_k$$. Earlier datasets are not fully available during later training, although a method such as replay can retain selected samples. The objective is to perform well across the tasks encountered so far. Evaluation therefore revisits earlier tasks to measure retention even though access to earlier training data is restricted. <d-cite key="liu2023libero"></d-cite>
+For task $$k$$, the learner receives demonstrations $$D_k$$. Earlier datasets are not fully available, though replay can retain selected examples. After each training stage, evaluation revisits earlier tasks to measure retention. <d-cite key="liu2023libero"></d-cite>
 
 #### Generating tasks with explicit goals
 
-LIBERO builds its task-generation pipeline on the Robosuite manipulation simulator:
+The pipeline uses the Robosuite simulator:
 
-1. **Generate an instruction.** Extract activity templates from Ego4D language annotations and combine them with objects available in the simulator. For example, an opening-and-placement instruction can ask the robot to open a drawer and put a bowl inside.
-2. **Specify the initial scene.** Select a suitable layout, object categories, placements, and initial object states. These define the distribution of starting configurations.
-3. **Specify success conditions.** Use a PDDL-style task file to describe goal predicates, such as an open drawer and a bowl inside it. Execution succeeds when all required predicates are true.
+1. Generate instructions from Ego4D activity templates and available simulated objects.
+2. Specify the scene layout, object placements, and initial states.
+3. Define goal predicates in a PDDL-style task file. A drawer task, for example, succeeds when the drawer is open and the bowl is inside.
 
-The task file defines the environment and its success conditions; the learned policy produces the robot's actions. Ego4D supplies language templates for task creation, while robot-action demonstrations are collected separately. <d-cite key="liu2023libero"></d-cite>
+The predicates define success; the learned policy produces actions. Ego4D supplies language templates, while robot demonstrations are collected separately. <d-cite key="liu2023libero"></d-cite>
 
 {% include figure.liquid
    path="assets/img/2026-11-18-continual-learning-multi-task-learning/libero-fig-02-task-generation.png"
@@ -202,28 +153,28 @@ The task file defines the environment and its success conditions; the learned po
 
 #### Four task suites
 
-The procedural pipeline supports creating new tasks, while the paper uses fixed suites for reproducible comparisons.
+The paper uses four fixed suites for reproducible comparisons.
 
 | Task suite | Tasks | Main variation | What it tests |
 |---|---:|---|---|
-| LIBERO-Spatial | 10 | Locations and spatial relationships among the same objects. | Selecting the correct object through its spatial relation, such as distinguishing identical bowls. |
-| LIBERO-Object | 10 | Target object types in pick-and-place tasks. | Recognizing and manipulating different objects while retaining a similar task structure. |
-| LIBERO-Goal | 10 | Requested goals with fixed objects and spatial relationships. | Learning different motions and behaviors in a shared scene. |
-| LIBERO-100 | 100 | Objects, layouts, goals, and interactions vary together. | Transferring mixed knowledge across more diverse tasks. |
+| LIBERO-Spatial | 10 | Locations and relations among the same objects. | Distinguish identical bowls by their spatial relation. |
+| LIBERO-Object | 10 | Target objects in pick-and-place tasks. | Recognize and manipulate different object types. |
+| LIBERO-Goal | 10 | Goals with fixed objects and layouts. | Learn different motions and behaviors in one scene. |
+| LIBERO-100 | 100 | Objects, layouts, goals, and interactions. | Transfer mixed knowledge across diverse tasks. |
 
-LIBERO-100 is divided into **LIBERO-90**, containing 90 shorter tasks used for pretraining, and **LIBERO-Long**, containing 10 longer tasks used for downstream lifelong-learning evaluation. These are subdivisions of the 100-task suite. A long-horizon task requires dependent actions within an episode; continual learning concerns the sequence of tasks used for training. LIBERO-Long combines both challenges. <d-cite key="liu2023libero"></d-cite>
+LIBERO-100 splits into 90 shorter tasks for pretraining (LIBERO-90) and 10 longer tasks for lifelong-learning evaluation (LIBERO-Long). Long horizon refers to dependent actions within an episode; lifelong learning refers to sequential training across tasks. <d-cite key="liu2023libero"></d-cite>
 
 #### Policy architectures: from observations to actions
 
-LIBERO compares three policies that process external-camera and wrist-camera images, a task instruction, and information about the robot's joints and gripper. Instructions are encoded with pretrained BERT embeddings. Each policy has a visual encoder, a temporal backbone for observation history, and a **Gaussian mixture model (GMM) action head**. <d-cite key="liu2023libero"></d-cite>
+All three policies use external-camera and wrist-camera images, joint and gripper state, and BERT instruction embeddings. They differ in their visual encoder and temporal backbone; each has a Gaussian mixture model (GMM) action head. <d-cite key="liu2023libero"></d-cite>
 
 | Policy | Visual encoder | Temporal backbone | Language integration |
 |---|---|---|---|
-| ResNet-RNN | ResNet | LSTM | Language conditions visual features through FiLM and is included in the temporal input. |
-| ResNet-T | ResNet | Transformer decoder | Language conditions the visual encoder and is supplied as a token to the temporal transformer. |
-| ViT-T | Vision Transformer | Transformer decoder | Language is supplied as a token to both the visual and temporal transformers. |
+| ResNet-RNN | ResNet | LSTM | FiLM-conditioned visual features and a language input to the LSTM. |
+| ResNet-T | ResNet | Transformer decoder | FiLM-conditioned visual features and a language token in the temporal transformer. |
+| ViT-T | Vision Transformer | Transformer decoder | Language tokens in both visual and temporal transformers. |
 
-The visual encoder extracts information about the scene. The temporal backbone combines information across observation steps. The GMM head predicts a distribution over continuous manipulation actions, from which an action is sampled for execution. This separates the choice of policy architecture from the choice of algorithm used to preserve knowledge across tasks.
+The temporal backbone summarizes the episode's observation history. The GMM head predicts a distribution over continuous actions, from which the robot samples an action to execute.
 
 {% include figure.liquid
    path="assets/img/2026-11-18-continual-learning-multi-task-learning/libero-supp-fig-05-policy-architectures.png"
@@ -234,7 +185,7 @@ The visual encoder extracts information about the scene. The temporal backbone c
    avoid_scaling=true
 %}
 
-The encoder diagram below shows how language enters visual processing. In the ResNet encoder, FiLM uses language-dependent scaling and shifting of intermediate features, followed by spatial softmax and a linear projection. The ViT encoder processes image-patch tokens together with a language token through self-attention. Both produce representations for the policy's temporal backbone. The temporal backbone summarizes observations within an episode; the continual-learning algorithm governs how the policy changes across training tasks.
+ResNet uses language-conditioned FiLM to rescale and shift visual features, followed by spatial softmax and a linear projection. ViT uses self-attention over image-patch and language tokens. Both representations feed the temporal backbone.
 
 {% include figure.liquid
    path="assets/img/2026-11-18-continual-learning-multi-task-learning/libero-supp-fig-06-image-encoders.png"
@@ -247,23 +198,21 @@ The encoder diagram below shows how language enters visual processing. In the Re
 
 #### Learning algorithms: preserving earlier skills
 
-LIBERO implements three continual-learning approaches and two reference methods. A policy architecture can be paired with different learning algorithms, allowing their effects to be studied separately. <d-cite key="liu2023libero"></d-cite>
+LIBERO pairs these architectures with three continual-learning algorithms and two reference methods. <d-cite key="liu2023libero"></d-cite>
 
 | Method | How training works | Resource or constraint |
 |---|---|---|
-| Sequential fine-tuning (SEQL) | Update the policy using only the current task's demonstrations. | No explicit mechanism protects earlier skills. |
-| Experience Replay (ER) | Mix stored demonstrations from earlier tasks with current-task data. | Requires memory for replay data. |
-| Elastic Weight Consolidation (EWC) | Use Fisher-based importance estimates to penalize changes to parameters important for earlier tasks. | Protection constrains later parameter updates. |
-| PackNet | Train, prune, fine-tune, and freeze a task subnetwork; use the remaining unallocated parameters for later tasks. | Available capacity decreases as tasks are added. |
-| Multi-task learning (MTL) | Jointly train using all task datasets. | Has broader data access than the sequential setting. |
+| Sequential fine-tuning (SEQL) | Train on the current task's demonstrations only. | No explicit retention mechanism. |
+| Experience Replay (ER) | Mix stored old-task examples with current data. | Requires replay memory. |
+| Elastic Weight Consolidation (EWC) | Penalize changes using Fisher-based parameter importance. | Constrains later updates. |
+| PackNet | Train, prune, fine-tune, and freeze task subnetworks. | Leaves less capacity for later tasks. |
+| Multi-task learning (MTL) | Train jointly on all task datasets. | Requires access to all datasets. |
 
-ER preserves behavior through rehearsal, EWC through a soft penalty, and PackNet through parameter allocation and freezing. PackNet's task masks retain access to previously allocated weights while protecting the computation used for earlier tasks. MTL is a useful joint-training reference, but its access to all datasets differs from the lifelong-learning restriction; it is not a guaranteed performance ceiling. <d-cite key="liu2023libero,mallya2018packnet"></d-cite>
+PackNet's masks protect earlier subnetworks while allowing later tasks to use their frozen weights. MTL has full data access, so it serves as a joint-training reference rather than a guaranteed upper bound. <d-cite key="liu2023libero,mallya2018packnet"></d-cite>
 
 #### Demonstrations and training procedure
 
-The policies are trained with **behavioral cloning**: supervised learning to reproduce human-demonstrated actions. The paper provides 50 demonstrations per task, collected through teleoperation with a 3Dconnexion SpaceMouse. Observations include images and robot state, while the task instruction conditions the policy. <d-cite key="liu2023libero"></d-cite>
-
-A per-step negative log-likelihood form of the paper's behavioral-cloning objective is:
+Policies are trained by behavioral cloning on 50 human demonstrations per task, collected through teleoperation with a 3Dconnexion SpaceMouse. <d-cite key="liu2023libero"></d-cite> A per-step negative log-likelihood loss is:
 
 $$
 \mathcal L_{\mathrm{BC}}(\theta;D_k)
@@ -271,20 +220,22 @@ $$
 \left[\log\pi_\theta(a_t\mid o_{\leq t};\mathcal T_k)\right].
 $$
 
-Here, $$\theta$$ denotes policy parameters, $$o_{\leq t}$$ is observation history, and $$a_t$$ is the demonstrated action. Minimizing this loss increases the probability assigned to demonstrated actions. This expresses the supervised action-matching step; replay, regularization, or parameter freezing changes how that step is applied across tasks. The paper's Equation (2) gives the broader trajectory- and task-averaged formulation.
+Source: Adapted from LIBERO, Section 2.2, Equation (2). This equation is not shown in the W13 presentation. <d-cite key="liu2023libero"></d-cite>
+
+Here, $$\theta$$ denotes policy parameters, $$o_{\leq t}$$ is observation history, and $$a_t$$ is the demonstrated action. Minimizing the loss increases the probability assigned to demonstrated actions.
 
 The sequential evaluation procedure is:
 
-1. Train on the current task's 50 demonstrations for 50 epochs, applying the selected continual-learning mechanism.
-2. Evaluate the current task every five epochs using 20 rollouts, each limited to 600 steps.
-3. Select the earliest checkpoint attaining the best current-task success rate, then evaluate previously learned tasks with 20 rollouts each.
-4. Continue to the next task and repeat the sequence across three random seeds.
+1. Train on the current task for 50 epochs using the selected algorithm.
+2. Evaluate every five epochs with 20 rollouts, each capped at 600 steps.
+3. Keep the earliest checkpoint with the best current-task success rate, then retest earlier tasks with 20 rollouts each.
+4. Continue through the task sequence and repeat with three random seeds.
 
-PackNet additionally prunes, fine-tunes, and freezes its allocated parameters. The supplement specifies an extra 50-epoch fine-tuning stage and notes that its reported evaluation metrics are calculated before that stage. MTL follows joint training across task datasets. Separate studies vary task ordering or compare training from scratch with pretraining on LIBERO-90 before learning LIBERO-Long. <d-cite key="liu2023libero"></d-cite>
+PackNet adds 50 epochs of fine-tuning after pruning; the supplement reports metrics before this stage. MTL trains jointly. Separate studies vary task order and test LIBERO-90 pretraining before learning LIBERO-Long. <d-cite key="liu2023libero"></d-cite>
 
 #### Evaluation equations from the W13 presentation
 
-The presentation's evaluation slide (printed slide 29, PDF page 38) uses the three metrics from Equation (3) of the paper: **forward transfer (FWT)**, **negative backward transfer (NBT)**, and **area under the success-rate curve (AUC)**. They measure new-task learning, retention of earlier tasks, and their combination. All are based on task success rates. <d-cite key="liu2023libero"></d-cite>
+The slides use three success-rate metrics: forward transfer (FWT) for new-task learning, negative backward transfer (NBT) for forgetting, and area under the curve (AUC) for their combination. <d-cite key="liu2023libero"></d-cite>
 
 {% include figure.liquid
    path="assets/img/2026-11-18-continual-learning-multi-task-learning/libero-fig-03-evaluation-metrics.png"
@@ -299,14 +250,14 @@ The equations use the following notation:
 
 | Symbol | Meaning |
 |---|---|
-| $$K$$ | Total number of tasks in the training sequence. |
-| $$k$$ | Task whose learning and retention are being measured. |
-| $$\tau$$ | A later training stage, after task $$k$$. |
-| $$e\in\mathcal E=\{0,5,10,\ldots,50\}$$ | The 11 evaluation checkpoints during current-task learning. |
-| $$c_{i,j,e}$$ | Success rate on task $$j$$ after training task $$i$$ for $$e$$ epochs, following tasks $$1,\ldots,i-1$$. |
-| $$c_{i,j}$$ | Success rate on task $$j$$ at the selected best checkpoint for training task $$i$$. |
+| $$K$$ | Number of tasks in the sequence. |
+| $$k$$ | Task being measured. |
+| $$\tau$$ | A training stage after task $$k$$. |
+| $$e\in\mathcal E=\{0,5,10,\ldots,50\}$$ | The 11 evaluation checkpoints. |
+| $$c_{i,j,e}$$ | Success rate on task $$j$$ after $$e$$ training epochs on task $$i$$. |
+| $$c_{i,j}$$ | Success rate on task $$j$$ at task $$i$$'s selected best checkpoint. |
 
-Thus, $$c_{k,k}$$ is the best evaluated success rate when learning task $$k$$, while $$c_{\tau,k}$$ is its success rate after a later task $$\tau$$ has been learned. For metric calculation, the paper holds the current task's learning curve constant after its earliest best checkpoint.
+Thus, $$c_{k,k}$$ is task $$k$$'s best acquisition success rate, and $$c_{\tau,k}$$ is its later performance. For these metrics, the learning curve is held constant after the earliest best checkpoint.
 
 ##### Forward transfer: learning a new task
 
@@ -319,7 +270,9 @@ $$
 \end{aligned}
 $$
 
-For each task, FWT averages success across the 11 learning checkpoints. A policy that reaches a high success rate earlier receives a higher score. The outer average summarizes this behavior across tasks. **Higher FWT is better.** LIBERO's definition measures new-task learning performance without subtracting a separately trained from-scratch baseline.
+Source: W13 presentation, "LIBERO - Evaluation Metrics," slide 29 (PDF page 38); LIBERO, Section 5.1, Equation (3). <d-cite key="liu2023libero"></d-cite>
+
+FWT averages success across the 11 learning checkpoints, then across tasks. Higher values indicate faster or stronger learning. This definition does not subtract a from-scratch baseline, so it does not isolate the benefit of prior learning.
 
 ##### Negative backward transfer: forgetting an earlier task
 
@@ -333,9 +286,11 @@ $$
 \end{aligned}
 $$
 
-For task $$k$$, NBT compares its best learned performance with performance after each later task, then averages those differences. For example, a decline from 0.8 to 0.5 contributes a loss of 0.3 at that later stage. **Lower NBT is better.** Zero indicates no average change from the reference performance; a negative value indicates average improvement.
+Source: W13 presentation, "LIBERO - Evaluation Metrics," slide 29 (PDF page 38); LIBERO, Section 5.1, Equation (3). <d-cite key="liu2023libero"></d-cite>
 
-*Notation note:* The per-task expression applies when $$k<K$$. For the final task, there is no later training stage and the denominator is zero. The displayed aggregate preserves the paper and slide notation; numerical evaluation requires an explicit final-task convention.
+NBT averages the drop from task $$k$$'s best learned performance to its performance after later tasks. Lower values indicate better retention; negative values indicate improvement. A drop from 0.8 to 0.5 contributes 0.3.
+
+*Notation note:* The inner expression applies to $$k<K$$. For the final task, $$K-k=0$$; computing the printed average requires a final-task convention.
 
 ##### AUC: combining learning and retention
 
@@ -349,9 +304,9 @@ $$
 \end{aligned}
 $$
 
-For each task, AUC combines its acquisition score, $$\mathrm{FWT}_k$$, with success rates after later tasks. Dividing by $$K-k+1$$ averages the learning contribution and the subsequent retention measurements. The outer average combines all tasks. **Higher AUC is better**, reflecting stronger performance across learning and retention. This is the paper's specific normalized definition of AUC.
+Source: W13 presentation, "LIBERO - Evaluation Metrics," slide 29 (PDF page 38); LIBERO, Section 5.1, Equation (3). <d-cite key="liu2023libero"></d-cite>
 
-These three metrics make the learning-retention tradeoff visible: a policy can learn new tasks quickly while forgetting earlier ones, or retain earlier tasks while struggling to acquire new skills. They should therefore be interpreted together.
+AUC averages a task's acquisition score, $$\mathrm{FWT}_k$$, with its success rates after later tasks, then averages across tasks. The denominator counts one acquisition stage and $$K-k$$ later stages. Higher AUC is better.
 
 ### LIBERO: Experiments and Results
 
@@ -510,7 +465,7 @@ $$
 \pi(\tau \mid o)
 $$
 
-Here, $\(\tau\)$ is an action trajectory with horizon $\(H\)$ and action dimension $\(d\)$, and $\(o\)$ is the robot's observation (such as an image, point cloud, or tactile input).
+Here, $$\tau$$ is an action trajectory with horizon $$H$$ and action dimension $$d$$, and $$o$$ is the robot's observation (such as an image, point cloud, or tactile input).
 
 Each policy is learned as a conditional diffusion model. During training, noise is added to expert action trajectories, and a neural network learns to predict that noise. At inference, the model starts with a noisy trajectory and repeatedly denoises it to generate an action sequence. The paper uses a mean squared error noise prediction objective:
 
@@ -520,14 +475,14 @@ $$
 \left\|\epsilon_t-\epsilon_\theta(\tau_0+\epsilon_t,t\mid o)\right\|^2
 $$
 
-In this expression, $\(\tau_0\)$ is the demonstrated trajectory, $\(\epsilon_t\)$ is the noise added at diffusion step $\(t\)$, and $\(\epsilon_\theta\)$ is the learned noise prediction network. The key point is that the diffusion model represents a distribution of plausible robot trajectories, rather than outputting only one fixed action.
+In this expression, $$\tau_0$$ is the demonstrated trajectory, $$\epsilon_t$$ is the noise added at diffusion step $$t$$, and $$\epsilon_\theta$$ is the learned noise prediction network. The key point is that the diffusion model represents a distribution of plausible robot trajectories, rather than outputting only one fixed action.
 
 PoCo trains separate policies for different combinations of:
 
-- **Modality \(M\):** RGB image, point cloud, tactile image, or proprioception.
-- **Domain \(D\):** simulation, human demonstrations, or real robot data.
-- **Task \(T\):** the requested manipulation, such as hammering or scooping.
-- **Behavior cost \(c\):** an additional objective, such as smoothness or workspace safety.
+- **Modality $$M$$:** RGB image, point cloud, tactile image, or proprioception.
+- **Domain $$D$$:** simulation, human demonstrations, or real robot data.
+- **Task $$T$$:** the requested manipulation, such as hammering or scooping.
+- **Behavior cost $$c$$:** an additional objective, such as smoothness or workspace safety.
 
 #### 2. Compose policies using a product of distributions
 
@@ -545,7 +500,7 @@ The paper applies this idea in three main ways:
 - **Behavior level composition:** combines a task policy with a cost function, so generated trajectories both perform the task and satisfy desired properties.
 - **Domain level composition:** combines policies trained on different domains or modalities, allowing their learned trajectory information to complement one another.
 
-For behavior composition, a cost $\(c(\tau)\)$ is converted into a probability like preference using a Boltzmann factor:
+For behavior composition, a cost $$c(\tau)$$ is converted into a probability like preference using a Boltzmann factor:
 
 $$
 p_{\mathrm{cost}}(\tau)\propto \exp[-c(\tau)],
@@ -570,7 +525,7 @@ $$
 +\epsilon_{\theta_2}(\tau^t\mid t)\right)+\xi.
 $$
 
-Here, $\(\tau^t\)$ is the current noisy trajectory, $\(\gamma_D\)$ is a composition step size/weight, and $\(\xi\)$ is Gaussian sampling noise. The same general procedure can include task guidance and gradients from behavior costs. The process repeats over denoising steps until a final trajectory is produced.
+Here, $$\tau^t$$ is the current noisy trajectory, $$\gamma_D$$ is a composition step size/weight, and $$\xi$$ is Gaussian sampling noise. The same general procedure can include task guidance and gradients from behavior costs. The process repeats over denoising steps until a final trajectory is produced.
 
 In short, PoCo does not merge the component networks' parameters or retrain them jointly. It combines their trajectory predictions at inference time. This is what makes the approach modular: new policies or objectives can be added to the composition, provided their outputs use a compatible action trajectory representation. <d-cite key="wang2024poco"></d-cite>
 
@@ -840,9 +795,6 @@ Although SRSA demonstrates the benefits of retrieving and adapting previously le
 Overall, SRSA provides an alternative perspective on knowledge reuse by retrieving and adapting pretrained specialist policies. While PoCo reuses policy predictions through composition and LIBERO evaluates knowledge transfer through continual learning, SRSA reuses previously learned policy parameters through retrieval and fine-tuning.
 
 The key takeaway is that separating knowledge retention from adaptation can help robots preserve existing skills while efficiently learning new tasks. However, the effectiveness of this approach depends on the quality of the skill library, retrieval accuracy, and the availability of suitable environments for policy adaptation.
-## Comparison and Synthesis
-
-<!-- TODO: Compare the papers and connect their lessons to the lecture topic. -->
 
 ## Discussion
 
